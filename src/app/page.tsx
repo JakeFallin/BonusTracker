@@ -1,103 +1,85 @@
-import Image from "next/image";
+import { CasinoInfoCard } from '@/components/features/CasinoInfoCard';
+import { mockCasinos } from '@/lib/mockData';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { HomePageCarousel } from '@/components/features/HomePageCarousel';
 
-export default function Home() {
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  let savedCasinoIds: string[] = [];
+
+  if (session?.user?.id) {
+    const userSavedCasinos = await prisma.savedCasino.findMany({
+      where: { userId: session.user.id },
+      select: { casinoId: true },
+    });
+    savedCasinoIds = userSavedCasinos.map(c => c.casinoId);
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
+    <div className="flex flex-col gap-8">
+      {/* Hero Section */}
+      <section className="bg-muted py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+              Find the Best Sweepstakes Casino Bonuses
+            </h1>
+            <p className="mb-8 text-lg text-muted-foreground">
+              Compare top-rated sweepstakes casinos, exclusive bonuses, and detailed reviews.
+              Your trusted guide to online sweepstakes gaming.
+            </p>
+            <div className="flex justify-center gap-4">
           <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+                href="/casinos"
+                className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              >
+                Browse Casinos
           </a>
           <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+                href="/guides"
+                className="inline-flex items-center justify-center rounded-md border border-input bg-background px-6 py-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Read Guides
+              </a>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* Top Rated Casinos Carousel */}
+      <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <h2 className="mb-8 text-3xl font-bold text-center">Top Rated Casinos</h2>
+        <HomePageCarousel casinos={mockCasinos} savedCasinoIds={savedCasinoIds} />
+      </section>
+
+      {/* What are Sweepstakes Casinos */}
+      <section className="bg-muted py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-6 text-3xl font-bold text-center">What are Sweepstakes Casinos?</h2>
+            <div className="prose prose-slate dark:prose-invert">
+              <p>
+                Sweepstakes casinos are online gaming platforms that operate under sweepstakes laws,
+                allowing players to enjoy casino-style games without real money gambling. These
+                platforms use virtual currencies like Gold Coins and Sweeps Coins, with the latter
+                being redeemable for real prizes.
+              </p>
+              <p>
+                Key features of sweepstakes casinos include:
+              </p>
+              <ul>
+                <li>Free-to-play model with optional purchases</li>
+                <li>Legal in most US states</li>
+                <li>No real money gambling required</li>
+                <li>Chance to win real prizes</li>
+                <li>Wide variety of casino games</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
