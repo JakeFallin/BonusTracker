@@ -7,14 +7,19 @@ generator client {
   provider = "prisma-client-js"
 }
 
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  savedCasinos  SavedCasino[]
-  totalDailyScMin     Float? @default(0)
-  totalDailyScMax     Float? @default(0)
-  totalDeposits     Float? @default(0)
-  totalBalance      Float? @default(0)
+model User {
+  id              String        @id @default(cuid())
+  name            String?
+  email           String?       @unique
+  emailVerified   DateTime?
+  image           String?
+  accounts        Account[]
+  sessions        Session[]
+  savedCasinos    SavedCasino[]
+  totalDailyScMin Float?        @default(0)
+  totalDailyScMax Float?        @default(0)
+  totalDeposits   Float?        @default(0)
+  totalBalance    Float?        @default(0)
 }
 
 model Account {
@@ -45,20 +50,20 @@ model Session {
 }
 
 model SavedCasino {
-  id             String   @id @default(cuid())
-  userId         String
-  casinoId       String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  balance        Float    @default(0)
-  depositTotal   Float    @default(0)
-  dailyScMin   Float    @default(0) 
-  dailyScMax   Float    @default(0) 
-  lastVisited    DateTime? 
-  rating         Float    @default(0) 
-  
+  id           String    @id @default(cuid())
+  userId       String
+  casinoId     String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance      Float     @default(0)
+  depositTotal Float     @default(0)
+  dailyScMin   Float     @default(0)
+  dailyScMax   Float     @default(0)
+  lastVisited  DateTime?
+  rating       Float     @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, casinoId])
   @@index([userId])
-} 
+}
