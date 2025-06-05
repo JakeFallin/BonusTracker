@@ -6,12 +6,15 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/db';
 import { Casino } from '@/lib/types';
 import { authOptions } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 // Extend Casino type to include amounts for the merged object
 interface CasinoWithSavedData extends Casino {
   savedBalance?: number;
   savedDepositTotal?: number;
-  savedDailyScValue?: number;
+  savedDailyScMin?: number | null;
+  savedDailyScMax?: number | null;
   savedLastVisited?: Date | null;
   savedRating?: number;
 }
@@ -20,9 +23,10 @@ export default async function MyCasinosPage() {
   const session = await getServerSession(authOptions);
   
   let casinosToDisplay: CasinoWithSavedData[] = [];
-  let totalBalance = 0; // Initialize totalBalance
+  let totalBalance = 0;
   let totalDeposits = 0;
-  let totalDailySC = 0;
+  let totalMinDailySC = 0;
+  let totalMaxDailySC = 0;
 
   if (session?.user?.id) {
     const userSavedRecords = await prisma.savedCasino.findMany({
@@ -33,26 +37,29 @@ export default async function MyCasinosPage() {
         casinoId: true,
         balance: true,
         depositTotal: true,
-        dailyScValue: true,
+        dailyScMin: true,
+        dailyScMax: true,
         lastVisited: true,
         rating: true,
       },
     });
     
-    // Calculate total balance
     totalBalance = userSavedRecords.reduce((sum, record) => sum + record.balance, 0);
     totalDeposits = userSavedRecords.reduce((sum, record) => sum + record.depositTotal, 0);
-    totalDailySC = userSavedRecords.reduce((sum, record) => sum + record.dailyScValue, 0);
+    totalMinDailySC = userSavedRecords.reduce((sum, record) => sum + (record.dailyScMin ?? 0), 0);
+    totalMaxDailySC = userSavedRecords.reduce((sum, record) => sum + (record.dailyScMax ?? 0), 0);
 
+    
     casinosToDisplay = mockCasinos
       .filter(mc => userSavedRecords.some(sr => sr.casinoId === mc.id))
       .map(mc => {
-        const savedRecord = userSavedRecords.find(sr => sr.casinoId === mc.id)!; // Assert savedRecord exists
+        const savedRecord = userSavedRecords.find(sr => sr.casinoId === mc.id)!;
         return {
           ...mc,
           savedBalance: savedRecord.balance,
           savedDepositTotal: savedRecord.depositTotal,
-          savedDailyScValue: savedRecord.dailyScValue,
+          savedDailyScMin: savedRecord.dailyScMin,
+          savedDailyScMax: savedRecord.dailyScMax,
           savedLastVisited: savedRecord.lastVisited,
           savedRating: savedRecord.rating,
         };
@@ -61,16 +68,22 @@ export default async function MyCasinosPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="mb-4 text-4xl font-bold text-center">My Casinos</h1>
-        <p className="text-lg text-muted-foreground text-center">
-          Track your favorite sweepstakes casinos and manage your daily rewards.
-        </p>
+      <div className="mb-8 text-center">
+        <h1 className="mb-4 text-4xl font-bold">My Casinos</h1>
+        <div className="flex flex-col items-center justify-center gap-2">
+          <p className="text-lg text-muted-foreground">
+            Add more casinos to earn more money!
+          </p>
+          <Button asChild>
+            <Link href="/casinos">Browse Casinos</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols">
         {/* Profile Sidebar */}
         <div className="space-y-6">
+           
         </div>
 
         {/* Main content area: Stats + Casino List */}
@@ -79,7 +92,8 @@ export default async function MyCasinosPage() {
             savedCasinoCount={casinosToDisplay.length} 
             totalBalance={totalBalance}
             totalDeposits={totalDeposits}
-            totalDailySC={totalDailySC}
+            totalMinDailySC={totalMinDailySC}
+            totalMaxDailySC={totalMaxDailySC}
           />
           
           {/* Casino List */}
@@ -91,7 +105,8 @@ export default async function MyCasinosPage() {
                   casino={casino} 
                   initialBalance={casino.savedBalance}
                   initialDepositTotal={casino.savedDepositTotal}
-                  initialDailyScValue={casino.savedDailyScValue}
+                  initialMinDailySc={casino.savedDailyScMin ?? undefined}
+                  initialMaxDailySc={casino.savedDailyScMax ?? undefined}
                   initialLastVisited={casino.savedLastVisited}
                   initialRating={casino.savedRating}
                 />

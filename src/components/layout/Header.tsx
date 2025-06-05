@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ModeToggle } from './ModeToggle';
 import { SignInButton } from '@/components/auth/SignInButton';
+import { navigationItems } from '@/lib/mockData';
 
 export function Header() {
   return (
@@ -11,15 +12,15 @@ export function Header() {
             <span className="font-bold">BonusTracker</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            <Link href="/casinos" className="transition-colors hover:text-foreground/80">
-              Casinos
-            </Link>
-            <Link href="/guides" className="transition-colors hover:text-foreground/80">
-              Guides
-            </Link>
-            <Link href="/reviews" className="transition-colors hover:text-foreground/80">
-              Reviews
-            </Link>
+            {navigationItems.map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="transition-colors hover:text-foreground/80"
+              >
+                {item.label}
+              </Link>
+            ))}
             <Link href="/my-casinos" className="transition-colors hover:text-foreground/80">
               My Casinos
             </Link>

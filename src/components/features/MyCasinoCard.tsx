@@ -6,59 +6,58 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Casino, BestGameItem } from '@/lib/types';
+import { Casino } from '@/lib/types';
 import { visitLinks } from '@/lib/visitLinks';
-import { dailySC as globalDailySC } from '@/lib/dailySC';
-import { Clock, Trash2, ChevronDown, ChevronUp, DollarSign, Save, ExternalLink, Star, Gamepad2 } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronUp, DollarSign, Save, ExternalLink, Star, Gamepad2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTimers } from '@/hooks/useTimers';
 
 interface MyCasinoCardProps {
   casino: Casino;
   initialBalance?: number;
   initialDepositTotal?: number;
-  initialDailyScValue?: number;
+  initialMinDailySc?: number;
+  initialMaxDailySc?: number;
   initialLastVisited?: Date | null;
   initialRating?: number;
 }
 
-// Helper function to parse SC value from string
-const parseScValue = (scString: string | undefined): number => {
-  if (!scString) return 1; // Default if undefined
-  const match = scString.match(/(\d*\.?\d+)/); // Matches integers or decimals
-  return match ? parseFloat(match[1]) : 1; // Default to 1 if no number found
+const tierColorMap: Record<string, string> = {
+  "Fantastic": "bg-purple-200 text-purple-800 border-purple-300 dark:bg-purple-700 dark:text-purple-100 dark:border-purple-600",
+  "Excellent": "bg-green-200 text-green-800 border-green-300 dark:bg-green-700 dark:text-green-100 dark:border-green-600",
+  "Great": "bg-orange-200 text-orange-800 border-orange-300 dark:bg-orange-700 dark:text-orange-100 dark:border-orange-600",
+  "Solid": "bg-blue-200 text-blue-800 border-blue-300 dark:bg-blue-700 dark:text-blue-100 dark:border-blue-600",
+  "Unproven": "bg-pink-200 text-pink-800 border-pink-300 dark:bg-pink-700 dark:text-pink-100 dark:border-pink-600",
 };
 
 export function MyCasinoCard({ 
   casino, 
   initialBalance = 0, 
   initialDepositTotal = 0, 
-  initialDailyScValue, 
+  initialMinDailySc,
+  initialMaxDailySc,
   initialLastVisited = null,
   initialRating,
 }: MyCasinoCardProps) {
   const router = useRouter();
-  const [showTimerSection, setShowTimerSection] = useState(false);
   const [showBestGamesSection, setShowBestGamesSection] = useState(false);
-  const [timerHours, setTimerHours] = useState(24);
-  const { activeTimers, addTimer, removeTimer } = useTimers();
-  const timer = activeTimers.find(t => t.casinoId === casino.id);
-  const [timeLeft, setTimeLeft] = useState<number | null>(timer ? timer.endTime - Date.now() : null);
 
-  const defaultScValue = initialDailyScValue !== undefined 
-    ? initialDailyScValue 
-    : parseScValue(globalDailySC[casino.slug as keyof typeof globalDailySC]);
+  
+  const [editableMinDailySc, setEditableMinDailySc] = useState<number>(
+    initialMinDailySc !== undefined ? initialMinDailySc : (casino.dailyMinSc ?? 0)
+  );
+  const [editableMaxDailySc, setEditableMaxDailySc] = useState<number>(
+    initialMaxDailySc !== undefined ? initialMaxDailySc : (casino.dailyMaxSc ?? 0)
+  );
 
   const [showAmountsSection, setShowAmountsSection] = useState(false);
   const [balance, setBalance] = useState<number>(initialBalance);
   const [depositTotal, setDepositTotal] = useState<number>(initialDepositTotal);
-  const [editableDailySC, setEditableDailySC] = useState<number>(defaultScValue);
   const [isSavingAmounts, setIsSavingAmounts] = useState(false);
   const [lastVisited, setLastVisited] = useState<Date | null>(initialLastVisited);
-  const [ratingToDisplay, setRatingToDisplay] = useState<number>(initialRating !== undefined ? initialRating : casino.rating);
+  const [userPersonalRating, setUserPersonalRating] = useState<number | undefined>(initialRating);
 
   useEffect(() => {
     setBalance(initialBalance);
@@ -69,20 +68,25 @@ export function MyCasinoCard({
   }, [initialDepositTotal]);
 
   useEffect(() => {
-    // Update editableDailySC if initialDailyScValue prop changes or if it was undefined and needs parsing
-    const newDefaultSc = initialDailyScValue !== undefined
-      ? initialDailyScValue
-      : parseScValue(globalDailySC[casino.slug as keyof typeof globalDailySC]);
-    setEditableDailySC(newDefaultSc);
-  }, [initialDailyScValue, casino.slug]);
+    setEditableMinDailySc(
+      initialMinDailySc !== undefined 
+        ? initialMinDailySc 
+        : (casino.dailyMinSc ?? 0)
+    );
+    setEditableMaxDailySc(
+      initialMaxDailySc !== undefined
+        ? initialMaxDailySc
+        : (casino.dailyMaxSc ?? 0)
+    );
+  }, [initialMinDailySc, initialMaxDailySc, casino.slug, casino.dailyMinSc, casino.dailyMaxSc]);
 
   useEffect(() => {
     setLastVisited(initialLastVisited);
   }, [initialLastVisited]);
 
   useEffect(() => {
-    setRatingToDisplay(initialRating !== undefined ? initialRating : casino.rating);
-  }, [initialRating, casino.rating]);
+    setUserPersonalRating(initialRating);
+  }, [initialRating]);
 
   const handleRemoveCasino = async () => {
     try {
@@ -106,37 +110,6 @@ export function MyCasinoCard({
     }
   };
 
-  const handleStartTimer = () => {
-    addTimer(casino.id, timerHours);
-    setTimeLeft(timerHours * 60 * 60 * 1000);
-    toast.success(`Timer set for ${timerHours} hours`);
-  };
-
-  const formatTimeLeft = (ms: number) => {
-    const hours = Math.floor(ms / (1000 * 60 * 60));
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-    return `${hours}h ${minutes}m ${seconds}s`;
-  };
-
-  useEffect(() => {
-    if (timeLeft === null) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev === null || prev <= 0) {
-          clearInterval(interval);
-          removeTimer(casino.id);
-          toast.success('Timer completed!');
-          return null;
-        }
-        return prev - 1000;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [timeLeft, casino.id, removeTimer]);
-
   const handleSaveAmounts = async () => {
     setIsSavingAmounts(true);
     try {
@@ -149,12 +122,13 @@ export function MyCasinoCard({
           casinoId: casino.id,
           balance,
           depositTotal,
-          dailyScValue: editableDailySC,
+          dailyScMin: editableMinDailySc,
+          dailyScMax: editableMaxDailySc,
         }),
       });
       if (response.ok) {
         toast.success('Amounts saved successfully!');
-        router.refresh(); // Refresh to ensure data consistency if needed elsewhere
+        router.refresh(); 
       } else {
         const errorData = await response.text();
         toast.error(`Failed to save amounts: ${response.status} ${errorData || ''}`);
@@ -168,11 +142,8 @@ export function MyCasinoCard({
   };
 
   const handleVisitSiteAndRecordTime = async () => {
-    // Open link in new tab
     const url = visitLinks[casino.slug as keyof typeof visitLinks];
     window.open(url, '_blank', 'noopener,noreferrer');
-
-    // Record visit time
     try {
       const response = await fetch('/api/casinos/save', {
         method: 'PATCH',
@@ -184,9 +155,8 @@ export function MyCasinoCard({
 
       if (response.ok) {
         const updatedCasino = await response.json();
-        setLastVisited(new Date(updatedCasino.lastVisited)); // Update state from response
+        setLastVisited(new Date(updatedCasino.lastVisited)); 
         toast.success('Visit time recorded!');
-        // router.refresh(); // Optional: refresh if other components need this immediately
       } else {
         toast.error('Failed to record visit time.');
       }
@@ -210,6 +180,17 @@ export function MyCasinoCard({
     return `${hours} hour${hours === 1 ? '' : 's'} ago`;
   };
 
+  const displayScText = (() => {
+    const minSc = editableMinDailySc ?? 0;
+    const maxSc = editableMaxDailySc ?? 0;
+
+    if (minSc > 0 || maxSc > 0) {
+      const amountStr = minSc === maxSc ? `${minSc} SC` : `${minSc}-${maxSc} SC`;
+      return `${amountStr} Daily Free SC`;
+    }
+    return null;
+  })();
+
   return (
     <Card className="w-full">
       <CardContent className="p-6">
@@ -229,23 +210,24 @@ export function MyCasinoCard({
                 <h3 className="text-xl font-semibold">{casino.name}</h3>
               </div>
               <div className="flex items-center gap-2 text-sm text-foreground flex-wrap">
-                <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                  <Star className="h-3 w-3" /> 
-                  <span>{ratingToDisplay.toFixed(1)}</span>
-                </Badge>
-                <span>•</span>
-                <span>{globalDailySC[casino.slug as keyof typeof globalDailySC]} Daily Free SC</span>
-                <span>•</span>
-                <span className="text-xs text-foreground">
-                 Visited: {formatLastVisited()}
-               </span>
+                <Badge className={`text-xs ${tierColorMap[casino.tier] || 'bg-gray-200 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'}`}>{casino.tier}</Badge>
+                {displayScText && <span>{displayScText}</span>}
+                {displayScText && <span>•</span>}
+                <span className="text-xs text-foreground">Visited: {formatLastVisited()}</span>
+                 {userPersonalRating !== undefined && (
+                  <>
+                    <span>•</span>
+                    <span className="text-xs text-foreground flex items-center">
+                      <Star className="h-3 w-3 mr-1 text-yellow-400 fill-yellow-400" /> {userPersonalRating.toFixed(1)}/5
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-2">
-            {/* Visit Button - no longer needs its own inner div */}
             <Button 
               onClick={handleVisitSiteAndRecordTime} 
               variant="outline" 
@@ -255,7 +237,6 @@ export function MyCasinoCard({
               <ExternalLink className="h-4 w-4 mr-1" /> Visit
             </Button>
 
-            {/* Best Games Button (New) */}
             {casino.bestGames && casino.bestGames.length > 0 && (
               <Button
                 variant="outline"
@@ -282,20 +263,6 @@ export function MyCasinoCard({
               <DollarSign className="h-4 w-4" />
               <span>Amounts</span>
               {showAmountsSection ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowTimerSection(!showTimerSection)}
-            >
-              <Clock className="h-4 w-4" />
-              <span>Timer</span>
-              {showTimerSection ? (
                 <ChevronUp className="h-4 w-4" />
               ) : (
                 <ChevronDown className="h-4 w-4" />
@@ -345,16 +312,30 @@ export function MyCasinoCard({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`daily-sc-${casino.id}`}>Daily SC Value</Label>
-                <Input
-                  id={`daily-sc-${casino.id}`}
-                  type="number"
-                  value={editableDailySC}
-                  onChange={(e) => setEditableDailySC(parseFloat(e.target.value) || 0)}
-                  className="w-full"
-                  placeholder="1"
-                  step="any"
-                />
+                <div className="space-y-2 mb-2">
+                    <Label htmlFor={`min-daily-sc-${casino.id}`}>Min Daily SC</Label>
+                    <Input
+                    id={`min-daily-sc-${casino.id}`}
+                    type="number"
+                    value={editableMinDailySc}
+                    onChange={(e) => setEditableMinDailySc(parseFloat(e.target.value) || 0)}
+                    className="w-full"
+                    placeholder="0"
+                    step="any"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor={`max-daily-sc-${casino.id}`}>Max Daily SC</Label>
+                    <Input
+                    id={`max-daily-sc-${casino.id}`}
+                    type="number"
+                    value={editableMaxDailySc}
+                    onChange={(e) => setEditableMaxDailySc(parseFloat(e.target.value) || 0)}
+                    className="w-full"
+                    placeholder="0"
+                    step="any"
+                    />
+                </div>
               </div>
             </div>
             <Button onClick={handleSaveAmounts} disabled={isSavingAmounts} size="sm" className="gap-2">
@@ -364,63 +345,17 @@ export function MyCasinoCard({
           </div>
         )}
 
-        {/* Timer Section */}
-        {showTimerSection && (
-          <div className="mt-4 border-t pt-4">
-            <div className="flex items-end gap-4">
-              <div className="space-y-2">
-                <Label htmlFor={`timer-hours-${casino.id}`}>Timer Duration (hours)</Label>
-                <Input
-                  id={`timer-hours-${casino.id}`}
-                  type="number"
-                  min="1"
-                  max="168"
-                  value={timerHours}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                    setTimerHours(Math.max(1, Math.min(168, parseInt(e.target.value) || 24)))
-                  }
-                  className="w-32"
-                />
-              </div>
-              <Button onClick={handleStartTimer} disabled={timeLeft !== null}>
-                Start Timer
-              </Button>
-            </div>
-            {timeLeft !== null && (
-              <div className="mt-4 text-center">
-                <div className="flex items-center justify-center gap-4">
-                  <p className="text-lg font-semibold">
-                    Time Remaining: {formatTimeLeft(timeLeft)}
-                  </p>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      removeTimer(casino.id);
-                      setTimeLeft(null);
-                      toast.success('Timer deleted');
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Best Games Section (New) */}
+        {/* Best Games Section */}
         {showBestGamesSection && casino.bestGames && casino.bestGames.length > 0 && (
           <div className="mt-4 border-t pt-4">
-            <h4 className="text-md font-semibold mb-3">Top Games & RTP</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-              {casino.bestGames.map((game, index) => (
-                <div key={index} className="flex justify-between">
-                  <span className="font-medium">{game.name}</span>
-                  <span className="text-muted-foreground">{game.rtp}</span>
-                </div>
+            <h4 className="text-md font-semibold mb-3">Top Games</h4>
+            <ul className="list-disc list-inside pl-4 space-y-1 text-sm">
+              {casino.bestGames.map((gameText, index) => (
+                <li key={index} className="text-foreground">
+                  {gameText}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
       </CardContent>

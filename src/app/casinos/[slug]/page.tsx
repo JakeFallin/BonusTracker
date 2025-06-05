@@ -10,6 +10,14 @@ interface CasinoPageProps {
   };
 }
 
+const tierColorMap: Record<string, string> = {
+  "Fantastic": "bg-purple-200 text-purple-800 border-purple-300 dark:bg-purple-700 dark:text-purple-100 dark:border-purple-600",
+  "Excellent": "bg-green-200 text-green-800 border-green-300 dark:bg-green-700 dark:text-green-100 dark:border-green-600",
+  "Great": "bg-orange-200 text-orange-800 border-orange-300 dark:bg-orange-700 dark:text-orange-100 dark:border-orange-600",
+  "Solid": "bg-blue-200 text-blue-800 border-blue-300 dark:bg-blue-700 dark:text-blue-100 dark:border-blue-600",
+  "Unproven": "bg-pink-200 text-pink-800 border-pink-300 dark:bg-pink-700 dark:text-pink-100 dark:border-pink-600",
+};
+
 export default function CasinoPage({ params }: CasinoPageProps) {
   const casino = mockCasinos.find((c) => c.slug === params.slug);
 
@@ -32,7 +40,7 @@ export default function CasinoPage({ params }: CasinoPageProps) {
         <div>
           <h1 className="text-4xl font-bold">{casino.name}</h1>
           <div className="mt-2 flex items-center gap-2">
-            <Badge variant="secondary">{casino.rating.toFixed(1)}/5.0</Badge>
+            <Badge className={`${tierColorMap[casino.tier] || 'bg-gray-200 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600'}`}>{casino.tier}</Badge>
           </div>
         </div>
       </div>

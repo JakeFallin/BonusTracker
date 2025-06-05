@@ -22,8 +22,27 @@ const guides = [
     description: 'Learn how to make the most of welcome bonuses and promotions.',
     href: '/guides/maximizing-bonuses',
   },
-];
-
+  {
+    title: 'Key Terms',
+    description: 'Learn about key concepts related to sweepstakes casinos, like RTP, Playthrough, and more.',
+    href: '/guides/key-terms',
+  },
+  {
+    title: 'Gambling Addiction Help',
+    description: 'In over your head? Learn how to get help.',
+    href: '/guides/gambling-addiction-help',
+  },
+  {
+    title: 'How to Use Bonus Tracker',
+    description: 'Learn how to use Bonus Tracker to maximize your rewards.',
+    href: '/guides/how-to-use-bonus-tracker',
+  },
+  {
+    title: 'VIP Leveling Guide',
+    description: 'Learn how to use GC to maximize your rewards.',
+    href: '/guides/vip-leveling-guide',
+  }
+]
 export default function GuidesPage() {
   return (
     <div className="container py-8">

@@ -7,15 +7,14 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
   image         String?
   accounts      Account[]
   sessions      Session[]
   savedCasinos  SavedCasino[]
+  totalDailyScMin     Float? @default(0)
+  totalDailyScMax     Float? @default(0)
+  totalDeposits     Float? @default(0)
+  totalBalance      Float? @default(0)
 }
 
 model Account {
@@ -52,10 +51,11 @@ model SavedCasino {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   balance        Float    @default(0)
   depositTotal   Float    @default(0)
-  dailyScValue   Float    @default(1) // Default to 1 SC if not specified
-  lastVisited    DateTime? // New field for last visited timestamp
-  rating         Float    @default(0) // New field for casino rating
-
+  dailyScMin   Float    @default(0) 
+  dailyScMax   Float    @default(0) 
+  lastVisited    DateTime? 
+  rating         Float    @default(0) 
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
