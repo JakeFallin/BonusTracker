@@ -33,7 +33,6 @@ export default function ReviewsPage() {
               <div>
                 <h2 className="text-2xl font-semibold">{casino.name}</h2>
                 <div className="mt-2 flex items-center gap-2">
-                  <Badge variant="secondary">{casino.rating.toFixed(1)}/5.0</Badge>
                 </div>
               </div>
             </div>

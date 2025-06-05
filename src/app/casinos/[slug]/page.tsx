@@ -4,12 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { mockCasinos } from '@/lib/mockData';
 
-interface CasinoPageProps {
-  params: {
-    slug: string;
-  };
-}
-
 const tierColorMap: Record<string, string> = {
   "Fantastic": "bg-purple-200 text-purple-800 border-purple-300 dark:bg-purple-700 dark:text-purple-100 dark:border-purple-600",
   "Excellent": "bg-green-200 text-green-800 border-green-300 dark:bg-green-700 dark:text-green-100 dark:border-green-600",
@@ -18,8 +12,16 @@ const tierColorMap: Record<string, string> = {
   "Unproven": "bg-pink-200 text-pink-800 border-pink-300 dark:bg-pink-700 dark:text-pink-100 dark:border-pink-600",
 };
 
-export default function CasinoPage({ params }: CasinoPageProps) {
-  const casino = mockCasinos.find((c) => c.slug === params.slug);
+// Generate static paths for each casino
+export async function generateStaticParams() {
+  return mockCasinos.map((casino) => ({
+    slug: casino.slug,
+  }));
+}
+
+export default async function CasinoPage({ params }: { params: Promise<{ slug: string }> }) {
+  const awaitedParams = await params;
+  const casino = mockCasinos.find((c) => c.slug === awaitedParams.slug);
 
   if (!casino) {
     notFound();

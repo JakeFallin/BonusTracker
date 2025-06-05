@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Casino } from '@/lib/types';
 import { signupLinks } from '@/lib/signupLinks';
-import { dailySC } from '@/lib/dailySC';
 import { Clock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -122,12 +121,9 @@ export function CasinoCard({ casino, showTimer = false, isSaved = false }: Casin
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Badge variant="secondary" className="text-xs">
-                  Tier {Math.ceil(casino.rating)}
+                  Tier {casino.tier}
                 </Badge>
                 <span>•</span>
-                <span>{casino.rating.toFixed(1)} User Rating</span>
-                <span>•</span>
-                <span>{dailySC[casino.slug as keyof typeof dailySC]} Daily Free SC</span>
               </div>
             </div>
           </div>
